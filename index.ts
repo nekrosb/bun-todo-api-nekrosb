@@ -1,5 +1,6 @@
 import { db, initializeDatabase } from "./src/db.ts";
 
+initializeDatabase();
 const server = Bun.serve({
   port: 3000,
   fetch(req) {
