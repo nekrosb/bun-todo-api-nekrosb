@@ -1,8 +1,6 @@
 import { Database } from "bun:sqlite";
 
-export const db = new Database("./data/mydb.sqlite", {create: true});
-
-  
+export const db = new Database("./data/mydb.sqlite", { create: true });
 
 db.run(`
     create table if not exists todos (
@@ -12,4 +10,4 @@ db.run(`
     due_date text,
     done boolean not null
     );
-    `)
+    `);
