@@ -47,15 +47,35 @@ const reqUpdateValidator = object({
 });
 
 export const updateTodo = async (req: Request) => {
-  const id = Number(req.url.split("/").pop());
+  const url = new URL(req.url);
+  const idParam = url.pathname.split("/").pop();
+
+  if (!idParam) {
+    return new Response(
+      JSON.stringify({ error: "Missing id" }),
+      { status: 400 },
+    );
+  }
+
+  const id = Number(idParam);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return new Response(
+      JSON.stringify({ error: "Invalid id" }),
+      { status: 400 },
+    );
+  }
 
   try {
     const body = await req.json();
     const validated = parse(reqUpdateValidator, body);
 
-    const entries = Object.entries(validated).filter(
-      ([_, value]) => value !== undefined,
-    );
+    const allowedFields = ["title", "description", "completed", "priority"];
+
+    const entries = Object.entries(validated)
+      .filter(([key, value]) =>
+        value !== undefined && allowedFields.includes(key)
+      );
 
     if (entries.length === 0) {
       return new Response(
@@ -80,7 +100,7 @@ export const updateTodo = async (req: Request) => {
     console.log(err);
     return new Response(
       JSON.stringify({ error: "Failed to update todo" }),
-      { status: 500 },
+      { status: 400 },
     );
   }
 };
