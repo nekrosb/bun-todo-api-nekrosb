@@ -52,55 +52,35 @@ export const updateTodo = async (req: Request) => {
   try {
     const body = await req.json();
     const validated = parse(reqUpdateValidator, body);
-    const f: string[] = [];
-    const d: any[] = [];
 
-    if (validated.title !== undefined && validated.title !== null) {
-      f.push("title");
-      d.push(validated.title);
-    }
-    if (validated.content !== undefined && validated.content !== null) {
-      f.push("content");
-      d.push(validated.content);
-    }
-    if (
-      validated.due_date !== undefined && validated.due_date !== null
-    ) {
-      f.push("due_date");
-      d.push(validated.due_date);
-    }
-    if (validated.done !== undefined && validated.done !== null) {
-      f.push("done");
-      d.push(validated.done);
+    const entries = Object.entries(validated).filter(
+      ([_, value]) => value !== undefined,
+    );
+
+    if (entries.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No fields to update" }),
+        { status: 400 },
+      );
     }
 
-    if (f.length === 0) {
-      return new Response(JSON.stringify({ error: "No fields to update" }), {
-        headers: { "Content-Type": "application/json" },
-        status: 400,
-      });
-    }
+    const fields = entries.map(([key]) => `${key} = ?`).join(", ");
+    const values = entries.map(([_, value]) => value);
 
-    const query = `UPDATE todos SET ${
-      f.map((field) => `${field} = ?`).join(", ")
-    } WHERE id = ?`;
-    d.push(id);
-    db.run(query, d);
+    db.run(
+      `UPDATE todos SET ${fields} WHERE id = ?`,
+      [...values, id],
+    );
 
     return new Response(
-      JSON.stringify({
-        message: "Todo updated successfully",
-      }),
-      {
-        headers: { "Content-Type": "application/json" },
-        status: 200,
-      },
+      JSON.stringify({ message: "Todo updated successfully" }),
+      { status: 200 },
     );
   } catch (err) {
     console.log(err);
-    return new Response(JSON.stringify({ error: "Failed to update todo" }), {
-      headers: { "Content-Type": "application/json" },
-      status: 500,
-    });
+    return new Response(
+      JSON.stringify({ error: "Failed to update todo" }),
+      { status: 500 },
+    );
   }
 };
