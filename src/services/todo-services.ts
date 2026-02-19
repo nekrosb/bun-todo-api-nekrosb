@@ -1,10 +1,13 @@
 import { db } from "../db.ts";
-import { boolean, object, optional, parse, string } from "valibot";
+import { boolean, date, object, optional, parse, string } from "valibot";
 
 export const getTodos = async () => {
   const todos = db.prepare("SELECT * FROM todos").all();
   return new Response(JSON.stringify(todos), {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "http://localhost:3000",
+    },
   });
 };
 
@@ -28,13 +31,19 @@ export const createTodo = async (req: Request) => {
       stmt.lastInsertRowid,
     );
     return new Response(JSON.stringify(newTodo), {
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+      },
       status: 201,
     });
   } catch (err) {
     console.log(err);
     return new Response(JSON.stringify({ error: "Failed to create todo" }), {
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+      },
       status: 400,
     });
   }
@@ -51,19 +60,25 @@ export const updateTodo = async (req: Request) => {
   const idParam = url.pathname.split("/").pop();
 
   if (!idParam) {
-    return new Response(
-      JSON.stringify({ error: "Missing id" }),
-      { status: 400 },
-    );
+    return new Response(JSON.stringify({ error: "Missing id" }), {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+      },
+      status: 400,
+    });
   }
 
   const id = Number(idParam);
 
   if (!Number.isInteger(id) || id <= 0) {
-    return new Response(
-      JSON.stringify({ error: "Invalid id" }),
-      { status: 400 },
-    );
+    return new Response(JSON.stringify({ error: "Invalid id" }), {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+      },
+      status: 400,
+    });
   }
 
   try {
@@ -78,10 +93,13 @@ export const updateTodo = async (req: Request) => {
       );
 
     if (entries.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "No fields to update" }),
-        { status: 400 },
-      );
+      return new Response(JSON.stringify({ error: "No fields to update" }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "http://localhost:3000",
+        },
+        status: 400,
+      });
     }
 
     const fields = entries.map(([key]) => `${key} = ?`).join(", ");
@@ -94,13 +112,116 @@ export const updateTodo = async (req: Request) => {
 
     return new Response(
       JSON.stringify({ message: "Todo updated successfully" }),
-      { status: 200 },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "http://localhost:3000",
+        },
+        status: 200,
+      },
+    );
+  } catch (err) {
+    console.log(err);
+    return new Response(JSON.stringify({ error: "Failed to update todo" }), {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+      },
+      status: 400,
+    });
+  }
+};
+
+export const deleteTodo = async (req: Request) => {
+  const url = new URL(req.url);
+  const idParam = url.pathname.split("/").pop();
+
+  if (!idParam) {
+    return new Response(JSON.stringify({ error: "Missing id" }), {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+      },
+      status: 404,
+    });
+  }
+
+  const id = Number(idParam);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return new Response(JSON.stringify({ error: "Invalid id" }), {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+      },
+      status: 404,
+    });
+  }
+
+  try {
+    const todo = db.prepare("SELECT * FROM todos WHERE id = ?").get(id);
+
+    if (!todo) {
+      return new Response(JSON.stringify({ error: "Todo not found" }), {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "http://localhost:3000",
+        },
+        status: 404,
+      });
+    }
+
+    db.run(
+      `DELETE FROM todos WHERE id = ?`,
+      [id],
+    );
+
+    return new Response(
+      JSON.stringify({ message: "Todo deleted successfully" }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "http://localhost:3000",
+        },
+        status: 200,
+      },
+    );
+  } catch (err) {
+    console.log(err);
+    return new Response(JSON.stringify({ error: "Failed to delete todo" }), {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "http://localhost:3000",
+      },
+      status: 400,
+    });
+  }
+};
+
+export const deleteAllTodos = async () => {
+  try {
+    db.run(`DELETE FROM todos`);
+    return new Response(
+      JSON.stringify({ message: "All todos deleted successfully" }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "http://localhost:3000",
+        },
+        status: 200,
+      },
     );
   } catch (err) {
     console.log(err);
     return new Response(
-      JSON.stringify({ error: "Failed to update todo" }),
-      { status: 400 },
+      JSON.stringify({ error: "Failed to delete all todos" }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "http://localhost:3000",
+        },
+        status: 400,
+      },
     );
   }
 };
