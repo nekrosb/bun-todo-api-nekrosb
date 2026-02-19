@@ -1,16 +1,13 @@
-import { db, initializeDatabase } from "./src/db.ts";
+import { initializeDatabase } from "./src/db.ts";
+import { getTodos, createTodo } from "./src/services/todo-services.ts";
 
 initializeDatabase();
 const server = Bun.serve({
   port: 3000,
   routes: {
     "/todos": {
-      GET: async () => {
-        const todos = db.prepare("SELECT * FROM todos").all();
-        return new Response(JSON.stringify(todos), {
-          headers: { "Content-Type": "application/json" },
-        });
-      },
+      GET: getTodos,
+      POST: createTodo,
     },
   },
 });
