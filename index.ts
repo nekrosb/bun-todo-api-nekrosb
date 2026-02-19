@@ -1,5 +1,9 @@
 import { initializeDatabase } from "./src/db.ts";
-import { getTodos, createTodo } from "./src/services/todo-services.ts";
+import {
+  createTodo,
+  getTodos,
+  updateTodo,
+} from "./src/services/todo-services.ts";
 
 initializeDatabase();
 const server = Bun.serve({
@@ -8,6 +12,9 @@ const server = Bun.serve({
     "/todos": {
       GET: getTodos,
       POST: createTodo,
+    },
+    "/todos/:id": {
+      PATCH: updateTodo,
     },
   },
 });
