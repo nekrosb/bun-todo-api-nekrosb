@@ -19,13 +19,6 @@ const server = Bun.serve({
   port: 4000,
 
   async fetch(req, server) {
-    if (req.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders,
-      });
-    }
-
     const response = await server.fetch(req);
 
     Object.entries(corsHeaders).forEach(([key, value]) => {
@@ -40,10 +33,20 @@ const server = Bun.serve({
       GET: getTodos,
       POST: createTodo,
       DELETE: deleteAllTodos,
+      OPTIONS: async () =>
+        new Response(null, {
+          status: 204,
+          headers: corsHeaders,
+        }),
     },
     "/todos/:id": {
       PATCH: updateTodo,
       DELETE: deleteTodo,
+      OPTIONS: async () =>
+        new Response(null, {
+          status: 204,
+          headers: corsHeaders,
+        }),
     },
   },
 });
