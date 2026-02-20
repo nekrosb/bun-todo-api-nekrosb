@@ -1,12 +1,21 @@
 import { db } from "../db.ts";
-import { boolean, date, object, optional, parse, string } from "valibot";
+import {
+  boolean,
+  date,
+  number,
+  object,
+  optional,
+  parse,
+  string,
+} from "valibot";
 
 export const getTodos = async () => {
   const todos = db.prepare("SELECT * FROM todos").all();
   return new Response(JSON.stringify(todos), {
     headers: {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "http://localhost:3000",
+
+      "Access-Control-Allow-Origin": "*",
     },
   });
 };
@@ -21,6 +30,7 @@ export const reqValidator = object({
 export const createTodo = async (req: Request) => {
   try {
     const body = await req.json();
+    console.log("CREATE BODY RECEIVED:", body);
     const validated = parse(reqValidator, body);
     const { title, content, due_date, done } = validated;
     const stmt = db.run(
@@ -33,7 +43,7 @@ export const createTodo = async (req: Request) => {
     return new Response(JSON.stringify(newTodo), {
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Origin": "*",
       },
       status: 201,
     });
@@ -42,7 +52,7 @@ export const createTodo = async (req: Request) => {
     return new Response(JSON.stringify({ error: "Failed to create todo" }), {
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Origin": "*",
       },
       status: 400,
     });
@@ -63,7 +73,7 @@ export const updateTodo = async (req: Request) => {
     return new Response(JSON.stringify({ error: "Missing id" }), {
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Origin": "*",
       },
       status: 400,
     });
@@ -75,7 +85,7 @@ export const updateTodo = async (req: Request) => {
     return new Response(JSON.stringify({ error: "Invalid id" }), {
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Origin": "*",
       },
       status: 400,
     });
@@ -83,9 +93,15 @@ export const updateTodo = async (req: Request) => {
 
   try {
     const body = await req.json();
+    console.log("UPDATE BODY RECEIVED:", body);
+
+    if (body.done !== undefined) {
+      body.done = Boolean(body.done); // 0 → false, 1 → true
+    }
+
     const validated = parse(reqUpdateValidator, body);
 
-    const allowedFields = ["title", "description", "completed", "priority"];
+    const allowedFields = ["title", "content", "due_date", "done"];
 
     const entries = Object.entries(validated)
       .filter(([key, value]) =>
@@ -96,7 +112,7 @@ export const updateTodo = async (req: Request) => {
       return new Response(JSON.stringify({ error: "No fields to update" }), {
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "http://localhost:3000",
+          "Access-Control-Allow-Origin": "*",
         },
         status: 400,
       });
@@ -115,7 +131,7 @@ export const updateTodo = async (req: Request) => {
       {
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "http://localhost:3000",
+          "Access-Control-Allow-Origin": "*",
         },
         status: 200,
       },
@@ -125,7 +141,7 @@ export const updateTodo = async (req: Request) => {
     return new Response(JSON.stringify({ error: "Failed to update todo" }), {
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Origin": "*",
       },
       status: 400,
     });
@@ -140,7 +156,7 @@ export const deleteTodo = async (req: Request) => {
     return new Response(JSON.stringify({ error: "Missing id" }), {
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Origin": "*",
       },
       status: 404,
     });
@@ -152,7 +168,7 @@ export const deleteTodo = async (req: Request) => {
     return new Response(JSON.stringify({ error: "Invalid id" }), {
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Origin": "*",
       },
       status: 404,
     });
@@ -165,7 +181,7 @@ export const deleteTodo = async (req: Request) => {
       return new Response(JSON.stringify({ error: "Todo not found" }), {
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "http://localhost:3000",
+          "Access-Control-Allow-Origin": "*",
         },
         status: 404,
       });
@@ -181,7 +197,7 @@ export const deleteTodo = async (req: Request) => {
       {
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "http://localhost:3000",
+          "Access-Control-Allow-Origin": "*",
         },
         status: 200,
       },
@@ -191,7 +207,7 @@ export const deleteTodo = async (req: Request) => {
     return new Response(JSON.stringify({ error: "Failed to delete todo" }), {
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "http://localhost:3000",
+        "Access-Control-Allow-Origin": "*",
       },
       status: 400,
     });
@@ -206,7 +222,7 @@ export const deleteAllTodos = async () => {
       {
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "http://localhost:3000",
+          "Access-Control-Allow-Origin": "*",
         },
         status: 200,
       },
@@ -218,7 +234,7 @@ export const deleteAllTodos = async () => {
       {
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "http://localhost:3000",
+          "Access-Control-Allow-Origin": "*",
         },
         status: 400,
       },
