@@ -1,13 +1,5 @@
 import { db } from "../db.ts";
-import {
-  boolean,
-  date,
-  number,
-  object,
-  optional,
-  parse,
-  string,
-} from "valibot";
+import { boolean, object, optional, parse, string } from "valibot";
 
 export const getTodos = async () => {
   const todos = db.prepare("SELECT * FROM todos").all();
@@ -30,7 +22,6 @@ export const reqValidator = object({
 export const createTodo = async (req: Request) => {
   try {
     const body = await req.json();
-    console.log("CREATE BODY RECEIVED:", body);
     const validated = parse(reqValidator, body);
     const { title, content, due_date, done } = validated;
     const stmt = db.run(
@@ -48,13 +39,12 @@ export const createTodo = async (req: Request) => {
       status: 201,
     });
   } catch (err) {
-    console.log(err);
     return new Response(JSON.stringify({ error: "Failed to create todo" }), {
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
       },
-      status: 400,
+      status: 500,
     });
   }
 };
@@ -93,10 +83,8 @@ export const updateTodo = async (req: Request) => {
 
   try {
     const body = await req.json();
-    console.log("UPDATE BODY RECEIVED:", body);
-
     if (body.done !== undefined) {
-      body.done = Boolean(body.done); // 0 → false, 1 → true
+      body.done = Boolean(body.done);
     }
 
     const validated = parse(reqUpdateValidator, body);
@@ -137,13 +125,12 @@ export const updateTodo = async (req: Request) => {
       },
     );
   } catch (err) {
-    console.log(err);
     return new Response(JSON.stringify({ error: "Failed to update todo" }), {
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
       },
-      status: 400,
+      status: 500,
     });
   }
 };
@@ -158,7 +145,7 @@ export const deleteTodo = async (req: Request) => {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
       },
-      status: 404,
+      status: 400,
     });
   }
 
@@ -170,7 +157,7 @@ export const deleteTodo = async (req: Request) => {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
       },
-      status: 404,
+      status: 400,
     });
   }
 
@@ -203,13 +190,12 @@ export const deleteTodo = async (req: Request) => {
       },
     );
   } catch (err) {
-    console.log(err);
     return new Response(JSON.stringify({ error: "Failed to delete todo" }), {
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
       },
-      status: 400,
+      status: 500,
     });
   }
 };
@@ -228,7 +214,6 @@ export const deleteAllTodos = async () => {
       },
     );
   } catch (err) {
-    console.log(err);
     return new Response(
       JSON.stringify({ error: "Failed to delete all todos" }),
       {
@@ -236,7 +221,7 @@ export const deleteAllTodos = async () => {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
         },
-        status: 400,
+        status: 500,
       },
     );
   }

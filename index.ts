@@ -18,9 +18,7 @@ const corsHeaders = {
 const server = Bun.serve({
   port: 4000,
 
-  // 🔥 Глобальный обработчик
   async fetch(req, server) {
-    // Обработка preflight
     if (req.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
@@ -28,10 +26,8 @@ const server = Bun.serve({
       });
     }
 
-    // Передаем запрос в routes
     const response = await server.fetch(req);
 
-    // Добавляем CORS ко всем ответам
     Object.entries(corsHeaders).forEach(([key, value]) => {
       response.headers.set(key, value);
     });
