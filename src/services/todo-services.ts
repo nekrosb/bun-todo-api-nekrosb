@@ -1,11 +1,19 @@
 import { db } from "../db.ts";
 import { boolean, object, optional, parse, string } from "valibot";
 
+export const createResponse = (data: any, status: number = 200) => {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
+};
+
 export const getTodos = async () => {
   const todos = db.prepare("SELECT * FROM todos").all();
-  return new Response(JSON.stringify(todos), {
-    headers: { "Content-Type": "application/json" },
-  });
+  return createResponse(todos);
 };
 
 export const reqValidator = object({
@@ -27,16 +35,9 @@ export const createTodo = async (req: Request) => {
     const newTodo = db.prepare("SELECT * FROM todos WHERE id = ?").get(
       stmt.lastInsertRowid,
     );
-    return new Response(JSON.stringify(newTodo), {
-      headers: { "Content-Type": "application/json" },
-      status: 201,
-    });
+    return createResponse(newTodo, 201);
   } catch (err) {
-    console.log(err);
-    return new Response(JSON.stringify({ error: "Failed to create todo" }), {
-      headers: { "Content-Type": "application/json" },
-      status: 400,
-    });
+    return createResponse({ error: "Failed to create todo" }, 500);
   }
 };
 const reqUpdateValidator = object({
@@ -51,26 +52,24 @@ export const updateTodo = async (req: Request) => {
   const idParam = url.pathname.split("/").pop();
 
   if (!idParam) {
-    return new Response(
-      JSON.stringify({ error: "Missing id" }),
-      { status: 400 },
-    );
+    return createResponse({ error: "Missing id" }, 400);
   }
 
   const id = Number(idParam);
 
   if (!Number.isInteger(id) || id <= 0) {
-    return new Response(
-      JSON.stringify({ error: "Invalid id" }),
-      { status: 400 },
-    );
+    return createResponse({ error: "Invalid id" }, 400);
   }
 
   try {
     const body = await req.json();
+    if (body.done !== undefined) {
+      body.done = Boolean(body.done);
+    }
+
     const validated = parse(reqUpdateValidator, body);
 
-    const allowedFields = ["title", "description", "completed", "priority"];
+    const allowedFields = ["title", "content", "due_date", "done"];
 
     const entries = Object.entries(validated)
       .filter(([key, value]) =>
@@ -78,10 +77,7 @@ export const updateTodo = async (req: Request) => {
       );
 
     if (entries.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "No fields to update" }),
-        { status: 400 },
-      );
+      return createResponse({ error: "No fields to update" }, 400);
     }
 
     const fields = entries.map(([key]) => `${key} = ?`).join(", ");
@@ -92,15 +88,49 @@ export const updateTodo = async (req: Request) => {
       [...values, id],
     );
 
-    return new Response(
-      JSON.stringify({ message: "Todo updated successfully" }),
-      { status: 200 },
-    );
+    return createResponse({ message: "Todo updated successfully" });
   } catch (err) {
-    console.log(err);
-    return new Response(
-      JSON.stringify({ error: "Failed to update todo" }),
-      { status: 400 },
+    return createResponse({ error: "Failed to update todo" }, 500);
+  }
+};
+
+export const deleteTodo = async (req: Request) => {
+  const url = new URL(req.url);
+  const idParam = url.pathname.split("/").pop();
+
+  if (!idParam) {
+    return createResponse({ error: "Missing id" }, 400);
+  }
+
+  const id = Number(idParam);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return createResponse({ error: "Invalid id" }, 400);
+  }
+
+  try {
+    const todo = db.prepare("SELECT * FROM todos WHERE id = ?").get(id);
+
+    if (!todo) {
+      return createResponse({ error: "Todo not found" }, 404);
+    }
+
+    db.run(
+      `DELETE FROM todos WHERE id = ?`,
+      [id],
     );
+
+    return createResponse({ message: "Todo deleted successfully" });
+  } catch (err) {
+    return createResponse({ error: "Failed to delete todo" }, 500);
+  }
+};
+
+export const deleteAllTodos = async () => {
+  try {
+    db.run(`DELETE FROM todos`);
+    return createResponse({ message: "All todos deleted successfully" });
+  } catch (err) {
+    return createResponse({ error: "Failed to delete all todos" }, 500);
   }
 };
